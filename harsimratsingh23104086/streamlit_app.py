@@ -3,8 +3,59 @@ import streamlit as st
 import tempfile, os, shutil, time, math, json
 from collections import deque
 
-st.set_page_config("Vehicle and Pedestrian Tracking", layout="wide")
-st.title("Vehicle and Pedestrian Tracking")
+# --- Swedish Design: light, clean, muted blues/yellows
+st.set_page_config(
+    page_title="Vehicle & Pedestrian Tracking",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.markdown("""
+<style>
+/* Overall Page Background Color */
+.stApp {
+    background-color: #fff8f0;  /* soft cream */
+    font-family: 'Helvetica', sans-serif;
+}
+
+/* Sidebar Background Color */
+.st-emotion-cache-1dd2fde { /* Targets the main sidebar container */
+    background-color: #f3ece5;  /* light beige */
+}
+
+/* Button Styling */
+div.stButton > button {
+    background-color: #ffd066;  /* soft yellow */
+    color: #1a1a4b;              /* dark blue text */
+    border-radius: 8px;
+    font-weight: bold;
+    height: 40px;
+}
+
+div.stButton > button:hover {
+    background-color: #ffe199;
+    color: #1a1a4b;
+}
+
+/* File Uploader Styling */
+.stFileUploader {
+    border: 2px dashed #1a1a4b;  /* navy border */
+    border-radius: 8px;
+    background-color: #ffffff;
+    padding: 12px;
+}
+
+/* Metric Cards Styling */
+.st-emotion-cache-1izj32h { /* Targets the metric container */
+    background-color: #fff2e0;  /* slightly darker cream */
+    border-radius: 8px;
+    padding: 12px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+st.title(" Vehicle & Pedestrian Tracking")
 
 # Sidebar controls
 max_upload_mb = st.sidebar.number_input(
@@ -17,7 +68,9 @@ distance_threshold = st.sidebar.slider(
     "Matching distance threshold (px)", 20, 200, 75
 )
 
-uploaded = st.file_uploader("Upload a video (mp4/avi/mov)", type=["mp4", "avi", "mov"])
+uploaded = st.file_uploader(
+    "Upload a video (mp4/avi/mov)", type=["mp4", "avi", "mov"]
+)
 if uploaded is None:
     st.info("Upload a video to start.")
     st.stop()
@@ -34,15 +87,13 @@ with open(inpath, "wb") as f:
 outname = f"tracked_{uploaded.name}"
 outpath = os.path.join(tmpdir, outname)
 
-if st.button("Start tracking"):
+if st.button("Start Tracking"):
     st.info("Processing video — this may take some time.")
     t0 = time.time()
 
-    # Lazy imports
     try:
         from ultralytics import YOLO
-        import cv2
-        import numpy as np
+        import cv2, numpy as np
     except Exception:
         st.error("Missing ultralytics / opencv. Run locally with those packages installed.")
         shutil.copy(inpath, outpath)
@@ -50,8 +101,7 @@ if st.button("Start tracking"):
         st.stop()
 
     model = YOLO(model_choice)
-
-    VEHICLE_CLASSES = {2, 3, 5, 7, 1}  # car, moto, bus, truck, bicycle
+    VEHICLE_CLASSES = {2, 3, 5, 7, 1}
     PEDESTRIAN_CLASSES = {0}
 
     cap = cv2.VideoCapture(inpath)
@@ -67,7 +117,7 @@ if st.button("Start tracking"):
     writer = cv2.VideoWriter(outpath, fourcc, fps, (w, h))
 
     next_id = 0
-    tracks = {}  
+    tracks = {}
     max_missed = 8
     seen_vehicle_ids, seen_ped_ids = set(), set()
     json_data = []
@@ -81,8 +131,8 @@ if st.button("Start tracking"):
 
     # Metrics in columns
     col1, col2 = st.columns(2)
-    vehicle_metric = col1.metric("Total Vehicles (unique IDs)", 0)
-    pedestrian_metric = col2.metric("Total Pedestrians (unique IDs)", 0)
+    vehicle_metric = col1.metric("Vehicles Detected", 0)
+    pedestrian_metric = col2.metric("Pedestrians Detected", 0)
     pbar = st.progress(0)
     frame_i = 0
 
@@ -92,8 +142,8 @@ if st.button("Start tracking"):
             break
 
         res = model(frame, verbose=False)[0]
-
         boxes, classes = [], []
+
         if getattr(res, "boxes", None) is not None and len(res.boxes) > 0:
             try:
                 xyxy = res.boxes.xyxy.cpu().numpy()
@@ -144,7 +194,6 @@ if st.button("Start tracking"):
 
         tracks = new_tracks
 
-        # Draw and save JSON
         for tid, (cx, cy, missed, tcls) in tracks.items():
             label = "person" if tcls in PEDESTRIAN_CLASSES else "vehicle"
             chosen_box, best_d = None, float("inf")
@@ -158,11 +207,10 @@ if st.button("Start tracking"):
                     chosen_box = b
             if chosen_box is not None and best_d < distance_threshold:
                 x1, y1, x2, y2 = map(int, chosen_box)
-                color = (0, 200, 0) if tcls in PEDESTRIAN_CLASSES else (0, 120, 255)
+                color = (255, 215, 0) if tcls in VEHICLE_CLASSES else (0, 102, 204)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, f"{label} ID:{tid}", (x1, max(15, y1-6)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-                # Save JSON entry
                 json_data.append({
                     "frame": frame_i,
                     "id": tid,
@@ -170,7 +218,7 @@ if st.button("Start tracking"):
                     "bbox": [x1, y1, x2, y2]
                 })
             else:
-                color = (0, 200, 0) if tcls in PEDESTRIAN_CLASSES else (0, 120, 255)
+                color = (0, 102, 204) if tcls in PEDESTRIAN_CLASSES else (255, 215, 0)
                 cv2.circle(frame, (int(cx), int(cy)), 6, color, -1)
                 cv2.putText(frame, f"{label} ID:{tid}", (int(cx)+8, int(cy)-8),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
@@ -178,8 +226,8 @@ if st.button("Start tracking"):
         writer.write(frame)
         frame_i += 1
         pbar.progress(min(frame_i/total_frames, 1.0))
-        vehicle_metric.metric("Total Vehicles (unique IDs)", len(seen_vehicle_ids))
-        pedestrian_metric.metric("Total Pedestrians (unique IDs)", len(seen_ped_ids))
+        vehicle_metric.metric("Vehicles Detected", len(seen_vehicle_ids))
+        pedestrian_metric.metric("Pedestrians Detected", len(seen_ped_ids))
 
     cap.release()
     writer.release()
@@ -190,7 +238,6 @@ if st.button("Start tracking"):
     with open(outpath, "rb") as fh:
         st.download_button("Download tracked video", data=fh.read(), file_name=outname, mime="video/mp4")
 
-    # Save JSON
     json_path = os.path.join(tmpdir, "tracked_objects.json")
     with open(json_path, "w") as f:
         json.dump(json_data, f, indent=2)
