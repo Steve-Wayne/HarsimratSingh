@@ -3,7 +3,6 @@ import streamlit as st
 import tempfile, os, shutil, time, math, json
 from collections import deque
 
-# --- Swedish Design: light, clean, muted blues/yellows
 st.set_page_config(
     page_title="Vehicle & Pedestrian Tracking",
     layout="wide",
