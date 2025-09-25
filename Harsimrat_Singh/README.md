@@ -6,11 +6,17 @@ This repository hosts the code, datasets, and resources for a comprehensive traf
 
 The project aims to develop an automated system capable of detecting, segmenting, and tracking vehicles, bikes, and pedestrians in traffic videos. The core components include:
 
-- **Data Acquisition:** Collection of diverse traffic videos from free sources, including Pexels and YouTube, ensuring coverage of various traffic environments and scenarios.
+- **Data Acquisition:** Collection of diverse traffic videos from free sources, including Pexels and YouTube, ensuring coverage of various traffic environments and scenarios. 
 - **Dataset Curation:** Conversion of video data into images through frame extraction, followed by duplicate frame removal to enhance dataset quality and reduce redundancy. Manual annotation was conducted using the Labeller platform to label objects in three categories: vehicles, bikes, and pedestrians.
 - **Model Development:** Fine-tuning of the YOLOv8n segmentation model on the curated dataset within the Google Colab environment, leveraging GPU acceleration for efficient model training. Custom hyperparameters and data splits were used to maximize detection accuracy.
 - **Performance Evaluation:** Comprehensive evaluation using key metrics such as precision, recall, and mean average precision (mAP) across classes to ensure robustness and generalization.
 - **Web Application:** Development of an intuitive web app powered by Streamlit that enables users to upload videos for real-time object tracking. The app provides annotated videos with overlay segmentation masks and outputs a JSON file containing detailed tracking information.
+
+## Datset and Demo Video 
+
+All the images used to train and test the model as well as the video can be found here:
+
+[Dataset and Demo Video · Drive](https://drive.google.com/drive/folders/1h7qCufIjyN6CgaXMBJbC2nqjeYB6EieY?usp=sharing)
 
 ## Live Demo
 
