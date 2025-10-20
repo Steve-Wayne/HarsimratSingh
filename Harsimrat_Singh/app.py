@@ -87,4 +87,4 @@ def download_json():
     return send_file("results.json", as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+app.run(debug=False)
