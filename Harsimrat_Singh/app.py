@@ -87,4 +87,5 @@ def download_json():
     return send_file("results.json", as_attachment=True)
 
 if __name__ == "__main__":
-app.run(debug=False)
+is_development = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=is_development)
